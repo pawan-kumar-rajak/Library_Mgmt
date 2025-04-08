@@ -27,7 +27,10 @@ const bookSchema = new Schema(
                 message: props => `${props.value} is not a valid publication year!`
             }
         },
-
+        coverImage: {
+            type: String,
+        },
+        
         isbn: {
             type: String,
             unique: true,
@@ -41,7 +44,8 @@ const bookSchema = new Schema(
           },
 
           digitalFile: {
-            path: String,
+            localPath: String,
+            universalPath: String,
             mimeType: String,
             size: Number,
             originalName: String
@@ -80,10 +84,21 @@ const bookSchema = new Schema(
             default: 0
         },
       
+        totalRating:{
+            type: Number,
+            default: 0
+        },
+
         createdAt: {
             type: Date,
             default: Date.now
         },
+
+        resourceType:{
+            type: String,
+            enum: ['book', 'article', 'journal'],
+            default: 'book'
+        }
 
     }
 )
@@ -91,3 +106,4 @@ const bookSchema = new Schema(
 bookSchema.plugin(mongoosePaginate)
 
 export const Book = mongoose.model('Book', bookSchema);
+

@@ -9,6 +9,7 @@ import {
     refreshAccessToken,
     ProfileUpdate,
     changeCurrentPassword,
+    getProfile
 } from "../controller/user.controller.js"
 
 const router = Router();
@@ -20,6 +21,7 @@ router.route("/refresh").post(verifyJWT,refreshAccessToken);
 router
     .route("/profile")
     .put(verifyJWT, ProfileUpdate)
+    .get(verifyJWT, getProfile); // Assuming you want to get the profile as well
 
 router.route("/change-password").put(verifyJWT, changeCurrentPassword);
 

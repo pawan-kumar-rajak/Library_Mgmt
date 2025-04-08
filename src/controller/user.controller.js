@@ -1,10 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import {
-	uploadOnCloudinary,
-	deleteImageFromCloudinary,
-} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 
@@ -83,7 +79,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
 	
 	try {
 		const { email, password } = req.body;
-		
+		console.log("email:", email)
 		if (!(email)) {
 			throw new ApiError(
 				400,
@@ -331,6 +327,54 @@ const changeCurrentPassword = asyncHandler(
 	}
 );
 
+const getProfile = asyncHandler(async (req, res, next) => {
+	try {
+		const userId = req.user._id; // Assuming the user's ID is available via the authenticated request.
+
+		// Find the user by ID and exclude sensitive fields
+		const user = await User.findById(userId).select("-password -refreshToken");
+
+		if (!user) {
+			return next(new ApiError(404, "User not found"));
+		}
+
+		return res.status(200).json(
+			new ApiResponse(200, { user }, "User profile fetched successfully")
+		);
+	} catch (error) {
+		console.error('Error in customers.controller (get profile) :', error);
+		return next(new ApiError(500, 'Internal server error in get profile'));
+	}
+})
+
+
+
+const resetBookLimits = async () => {
+	try {
+	  const now = new Date();
+	  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+	  
+	  // Find users whose registration anniversary is this month
+	  const result = await User.updateMany(
+		{
+		  $expr: {
+			$eq: [{ $month: "$createdAt" }, now.getMonth() + 1]
+		  }
+		},
+		{
+		  $set: { bookLimit: 20 },
+		  $inc: { unreadNotifications: 1 }
+		}
+	  );
+  
+	  console.log(`Reset book limits for ${result.modifiedCount} users`);
+	} catch (error) {
+	  console.error('Error resetting book limits:', error);
+	}
+  };
+  
+  
+
 export {
 	
 	registerUser,
@@ -339,5 +383,7 @@ export {
     refreshAccessToken,
     ProfileUpdate,
     changeCurrentPassword,
+	getProfile,
+	resetBookLimits
 
 }

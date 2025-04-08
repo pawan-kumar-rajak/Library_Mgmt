@@ -54,7 +54,7 @@ const deleteCategory = asyncHandler(async (req, res, next) => {
 
 const getCategoryNames = asyncHandler(async (req, res, next) => {
     try {
-        const categories = await Category.find({}, { name: 1, _id: 0 });
+        const categories = await Category.find({}, { name: 1, _id: 1 });
 
         if (!categories) {
             return next(new ApiError(404, "No categories found"));
@@ -71,12 +71,43 @@ const getCategoryNames = asyncHandler(async (req, res, next) => {
 const getCategoryBooks = asyncHandler(async(req,res,next)=>{
     try {
         const {categoryId} = req.params
-
+        const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+        const sort = {};
+        sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    
         if(!categoryId){
             return next(new ApiError(400,"Category ID is required"))
         }
+        // Extracting the user's role
+            const role = req.role;
+        
+            // Determine which availability to filter by based on the user's role
+            let availabilityFilter = 'public'; // Default to public books for "user" role
+        
+        
+            if (role === 'User') {
+              availabilityFilter = { $in: ['public', 'students'] };
+            }
+        
+            else if (role === 'Admin') {
+              availabilityFilter = { $in: ['public', 'students', 'admin'] };
+            }
+        
+            else if (role === 'Faculty') {
+              availabilityFilter = { $in: ['public', 'students', 'faculty'] };
+            }
+           availabilityFilter = { $in: ['public', 'students'] };
 
-      const books = await Book.find({category: categoryId}).populate('category', 'name')
+            const options = {
+              page: parseInt(page),
+              limit: parseInt(limit),
+              sort,
+              populate: { path: 'categories', select: 'name' },
+              select:"title description author publisher coverImage reads rating totalRating categories availability",
+            };
+        
+
+      const books = await Book.paginate({availability:availabilityFilter,categories:{$in:categoryId}},options)
 
         res.status(200).json(new ApiResponse(200, books,'books retrieved successfully'))
 

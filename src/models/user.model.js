@@ -49,11 +49,11 @@ const userSchema = new Schema(
             type: String
         },
 
-        bookiLimit:{
+        bookLimit:{
             type: Number,
             default:20
         },
-      
+        
 
         unreadNotifications:{
             type: Number,

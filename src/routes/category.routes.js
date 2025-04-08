@@ -7,10 +7,10 @@ import { createCategory, deleteCategory, getCategoryNames, getCategoryBooks} fro
 
 const router = Router();
 
-router.route("/").get(getCategoryNames).post(verifyJWT, isAdmin, createCategory);
 router.route("/:id").delete(verifyJWT, isAdmin, deleteCategory);
 router.route("/books/:categoryId").get(getCategoryBooks)
 router.route("/add").post(verifyJWT,isAdmin,createCategory);
+router.route("/").get(getCategoryNames)
 
 
 export default router;
