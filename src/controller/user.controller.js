@@ -311,7 +311,7 @@ const changeCurrentPassword =async (req, res, next) => {
 					)
 				);
 		} catch (error) {
-			console.error('Error in customers.controller (change password) :', error);
+			console.error('Error in user.controller (change password) :', error);
 			return next(new ApiError(500, 'Internal server error in change password'));
 		}
 	}

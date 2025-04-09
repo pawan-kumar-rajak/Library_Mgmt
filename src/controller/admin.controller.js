@@ -297,6 +297,25 @@ const changeCurrentPassword = async (req, res, next) => {
 }
 
 
+const getProfile = async (req, res, next) => {
+	try {
+		const userId = req.user._id; // Assuming the user's ID is available via the authenticated request.
+		
+		const user = await Admin.findById(userId).select("-password -refreshToken");
+
+		if (!user) {
+			return next(new ApiError(404, "User not found"));
+		}	
+
+		return res.status(200).json(
+			new ApiResponse(200, { user }, "User profile fetched successfully")
+		);
+	} catch (error) {
+		console.error('Error in admin.controller (get profile) :', error);
+		return next(new ApiError(500, 'Internal server error in get profile'));
+	}
+}
+
 
 const getActivityLogs = async (req, res) => {
 	const { page = 1, limit = 20, action, entityType, userId } = req.query;
@@ -332,5 +351,6 @@ export {
 	refreshAccessToken,
 	changeCurrentPassword,
 	getActivityLogs,
+	getProfile
 
 };

@@ -12,11 +12,12 @@ const bookSchema = new Schema(
         author: {
             type: String,
             required: true,
-          
+            trim: true
         },
         publisher: {
             type: String,
-            trim: true
+            trim: true,
+            required: true
         },
         publicationYear: {
             type: Number,
@@ -41,6 +42,7 @@ const bookSchema = new Schema(
               },
               message: props => `${props.value} is not a valid ISBN!`
             }
+            
           },
 
           digitalFile: {

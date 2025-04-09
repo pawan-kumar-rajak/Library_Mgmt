@@ -21,10 +21,10 @@ const createCategory = async (req, res, next) => {
             description,
         });
 
-       res.status(201).json(new ApiResponse(201, category, 'category created Successfully'));
+        res.status(201).json(new ApiResponse(201, category, 'category created Successfully'));
     } catch (error) {
         console.log("error in createCategory: ", error)
-        return next(new ApiError(500, "Something went wrong while creating category",error));
+        return next(new ApiError(500, "Something went wrong while creating category", error));
     }
 }
 
@@ -67,48 +67,52 @@ const getCategoryNames = async (req, res, next) => {
 }
 
 
-const getCategoryBooks = async(req,res,next)=>{
+const getCategoryBooks = async (req, res, next) => {
     try {
-        const {categoryId} = req.params
+        const { categoryId } = req.params
         const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
         const sort = {};
         sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
-    
-        if(!categoryId){
-            return next(new ApiError(400,"Category ID is required"))
+
+        if (!categoryId) {
+            return next(new ApiError(400, "Category ID is required"))
         }
         // Extracting the user's role
-            const role = req.role;
-        
-            // Determine which availability to filter by based on the user's role
-            let availabilityFilter = 'public'; // Default to public books for "user" role
-        
-        
-            if (role === 'User') {
-              availabilityFilter = { $in: ['public', 'students'] };
-            }
-        
-            else if (role === 'Admin') {
-              availabilityFilter = { $in: ['public', 'students', 'admin'] };
-            }
-        
-            else if (role === 'Faculty') {
-              availabilityFilter = { $in: ['public', 'students', 'faculty'] };
-            }
-           availabilityFilter = { $in: ['public', 'students'] };
+        const role = req.role;
 
-            const options = {
-              page: parseInt(page),
-              limit: parseInt(limit),
-              sort,
-              populate: { path: 'categories', select: 'name' },
-              select:"title description author publisher coverImage reads rating totalRating categories availability",
-            };
+        // Determine which availability to filter by based on the user's role
+        let availabilityFilter = 'public'; // Default to public books for "user" role
+
+
+        if (role === 'User') {
+            availabilityFilter = { $in: ['public', 'students'] };
+        }
+
+        else if (role === 'Admin') {
+            availabilityFilter = { $in: ['public', 'students', 'admin'] };
+        }
+
+        else if (role === 'Faculty') {
+            availabilityFilter = { $in: ['public', 'students', 'faculty'] };
+        }
+
+        else {
+            availabilityFilter = { $in: ['public'] };
+        }
+
         
+        const options = {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            sort,
+            populate: { path: 'categories', select: 'name' },
+            select: "title description author publisher coverImage reads rating totalRating categories availability",
+        };
 
-      const books = await Book.paginate({availability:availabilityFilter,categories:{$in:categoryId}},options)
 
-        res.status(200).json(new ApiResponse(200, books,'books retrieved successfully'))
+        const books = await Book.paginate({ availability: availabilityFilter, categories: { $in: categoryId } }, options)
+
+        res.status(200).json(new ApiResponse(200, books, 'books retrieved successfully'))
 
     } catch (error) {
         console.log("error in getCategorybooks: ", error)

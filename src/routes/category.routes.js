@@ -8,7 +8,15 @@ import { createCategory, deleteCategory, getCategoryNames, getCategoryBooks} fro
 const router = Router();
 
 router.route("/:id").delete(verifyJWT, isAdmin, deleteCategory);
-router.route("/books/:categoryId").get(getCategoryBooks)
+
+router.route("/books/:categoryId").get((req, res, next) => {
+    if (req.cookies?.accessToken ||
+      req.header("Authorization")?.replace("Bearer ", "")) {
+      return verifyJWT(req,res,next); // Only apply JWT middleware if the authorization header exists
+    }
+    next(); 
+  },getCategoryBooks)
+
 router.route("/add").post(verifyJWT,isAdmin,createCategory);
 router.route("/").get(getCategoryNames)
 
