@@ -1,4 +1,3 @@
-import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -25,7 +24,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
 };
 
 
-const registerUser = asyncHandler(async (req, res, next) => {
+const registerUser = async (req, res, next) => {
 	try {
 		const { fullName, email, password, phoneNo, otp, sex } = req.body;
 	
@@ -72,12 +71,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
 		console.log("err in Register Customer: ", error)
 		return next(new ApiError(500, "internal server error in Customer registration",error))
 	}
-});
+}
 
 
-const loginUser = asyncHandler(async (req, res, next) => {
+const loginUser = async (req, res, next) => {
 	
 	try {
+		// console.log("user role: ", req.user.role || req.role)
 		const { email, password } = req.body;
 		console.log("email:", email)
 		if (!(email)) {
@@ -136,9 +136,9 @@ const loginUser = asyncHandler(async (req, res, next) => {
 		console.error('Error in customers.controller (Login customer) :', error);
 		return next(new ApiError(500, 'Internal server error in Login customer'));
 	}
-});
+}
 
-const logoutUser = asyncHandler(async (req, res, next) => {
+const logoutUser = async (req, res, next) => {
 	await User.findByIdAndUpdate(
 		req.user._id,
 		{
@@ -161,10 +161,9 @@ const logoutUser = asyncHandler(async (req, res, next) => {
 		.clearCookie("accessToken", options)
 		.clearCookie("refreshToken", options)
 		.json(new ApiResponse(200, {}, "User logged Out"));
-});
+}
 
-const refreshAccessToken = asyncHandler(
-	async (req, res, next) => {
+const refreshAccessToken = async (req, res, next) => {
 		const incomingRefreshToken =
 			req.cookies.refreshToken || req.body.refreshToken || req.header("Authorization")?.replace("Bearer ", "");;
 
@@ -224,9 +223,9 @@ const refreshAccessToken = asyncHandler(
 			))
 		}
 	}
-);
 
-const ProfileUpdate = asyncHandler(async (req, res, next) => {
+
+const ProfileUpdate = async (req, res, next) => {
 	try {
 		const { DOB, sex, phoneNo, fullName } = req.body;
 		const userId = req.user._id; // Assuming the user's ID is available via the authenticated request.
@@ -262,18 +261,9 @@ const ProfileUpdate = asyncHandler(async (req, res, next) => {
 		console.log("error in Customer Profile Update: ", error);
 		return next(new ApiError(500,"Internal Server Error in Profile Update"))
 	}
-});
+}
 
-const changeCurrentPassword = asyncHandler(
-	async (req, res, next) => {
-
-		// const incomingRefreshToken =
-		// 	req.cookies.refreshToken || req.body.refreshToken;
-
-		// if (!incomingRefreshToken) {
-		// 	return next(new ApiError(401, "unauthorized request"));
-
-		// }
+const changeCurrentPassword =async (req, res, next) => {
 
 		try {
 			const { oldPassword, newPassword } = req.body;
@@ -325,18 +315,17 @@ const changeCurrentPassword = asyncHandler(
 			return next(new ApiError(500, 'Internal server error in change password'));
 		}
 	}
-);
 
-const getProfile = asyncHandler(async (req, res, next) => {
+const getProfile = async (req, res, next) => {
 	try {
 		const userId = req.user._id; // Assuming the user's ID is available via the authenticated request.
-
+		console.log("calling user profile with user id: ", userId)
 		// Find the user by ID and exclude sensitive fields
 		const user = await User.findById(userId).select("-password -refreshToken");
 
 		if (!user) {
 			return next(new ApiError(404, "User not found"));
-		}
+		}	
 
 		return res.status(200).json(
 			new ApiResponse(200, { user }, "User profile fetched successfully")
@@ -345,7 +334,7 @@ const getProfile = asyncHandler(async (req, res, next) => {
 		console.error('Error in customers.controller (get profile) :', error);
 		return next(new ApiError(500, 'Internal server error in get profile'));
 	}
-})
+}
 
 
 

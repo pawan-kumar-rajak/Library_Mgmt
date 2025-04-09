@@ -1,14 +1,11 @@
-import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Review } from "../models/reviews.model.js";
 import mongoose from "mongoose";
-import { Book } from "../models/books.model.js";
-import { User } from "../models/user.model.js";
 import { UserBookInteraction } from "../models/booksIntraction.model.js";
 
 //!----------------------PRODUCTS REVIWINGS------------------------
-const addReview = asyncHandler(async (req, res, next) => {
+const addReview = async (req, res, next) => {
 	try {
 		const { BookId } = req.params;
 		const reviewer = req.user._id;
@@ -67,10 +64,9 @@ const addReview = asyncHandler(async (req, res, next) => {
 		console.log("error in addReview", error);
 		return next(new ApiError(500, "Internal Server Error"));
 	}
-});
+}
 
-// Controller to get all reviews for a product
-const getAllReviews = asyncHandler(async (req, res, next) => {
+const getAllReviews = async (req, res, next) => {
 	try {
 		const { BookId } = req.params;
 		const page = parseInt(req.query.page) || 1;  // Get the page number, default to 1 if not provided
@@ -175,11 +171,10 @@ const getAllReviews = asyncHandler(async (req, res, next) => {
 		console.log("error in getAllReviews", error);
 		return next(new ApiError(500, "Internal Server Error"));
 	}
-});
+}
 
 
-const getBookRatingStats = asyncHandler(
-	async (req, res, next) => {
+const getBookRatingStats =async (req, res, next) => {
 		const { BookId } = req.params;
 
 		if (!BookId) {
@@ -254,7 +249,7 @@ const getBookRatingStats = asyncHandler(
 			)
 		);
 	}
-);
+
 
 
 

@@ -1,19 +1,24 @@
-import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { Book } from "../models/books.model.js";
 import { UserBookInteraction } from "../models/booksIntraction.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 
-const markAsRead = asyncHandler(async (req, res, next) => {
+const markAsRead = async (req, res, next) => {
     try {
         const { bookId } = req.params;
-        const { currentPage, totalPages } = req.body;
+        const { currentPage } = req.body;
+
         const userId = req.user._id;
 
+        const totalPagesinBook = await Book.findById(bookId).select("digitalFile");
+
         // Calculate percentage
-        const percentage = Math.round((currentPage / totalPages) * 100);
-        const isCompleted = percentage >= 100;
+        const percentage = Math.round((currentPage / totalPagesinBook.digitalFile.totalPages) * 100);
+
+    
+        const isCompleted = percentage >= 95; // Assuming 95% is considered completed
+
 
         // Atomic update operation
         const interaction = await UserBookInteraction.findOneAndUpdate(
@@ -47,10 +52,10 @@ const markAsRead = asyncHandler(async (req, res, next) => {
         console.error('Error in BookIntraction.controller (Mark as read) :', error);
         return next(new ApiError(500, 'Internal server error in Mark as read'));
     }
-});
+}
 
 
-const markAsFavorite = asyncHandler(async (req, res) => {
+const markAsFavorite = async (req, res) => {
     try {
         const { bookId } = req.params;
         const userId = req.user._id;
@@ -71,10 +76,10 @@ const markAsFavorite = asyncHandler(async (req, res) => {
         console.error('Error in BookIntraction.controller (Mark as fav) :', error);
         return next(new ApiError(500, 'Internal server error in Mark as fav'));
     }
-});
+}
 
 
-const removeFromFavorite = asyncHandler(async (req, res) => {
+const removeFromFavorite = async (req, res) => {
     try {
         const { bookId } = req.params;
         const userId = req.user._id;
@@ -95,11 +100,11 @@ const removeFromFavorite = asyncHandler(async (req, res) => {
         console.error('Error in BookIntraction.controller (Mark as fav) :', error);
         return next(new ApiError(500, 'Internal server error in Mark as fav'));
     }
-});
+}
 
 
 
-const getFavoriteBooks = asyncHandler(async (req, res) => {
+const getFavoriteBooks = async (req, res) => {
   try {
       const userId = req.user._id;
       const { page = 1, limit = 10 } = req.query;
@@ -138,10 +143,10 @@ const getFavoriteBooks = asyncHandler(async (req, res) => {
     console.error('Error in BookIntraction.controller (Favourite Books) :', error);
     return next(new ApiError(500, 'Internal server error in Favourite Books'));
   }
-});
+}
 
 
-const getReadBooks = asyncHandler(async (req, res) => {
+const getReadBooks = async (req, res) => {
     const userId = req.user._id;
     const { page = 1, limit = 10, status='reading' } = req.query;
 
@@ -188,10 +193,10 @@ const getReadBooks = asyncHandler(async (req, res) => {
         },
         "Read books retrieved successfully"
     ));
-});
+}
 
 
-const giveBookNotes = asyncHandler(async (req, res) => {
+const giveBookNotes = async (req, res) => {
     const { bookId } = req.params;
     const { notes } = req.body;
     const userId = req.user._id;
@@ -212,9 +217,9 @@ const giveBookNotes = asyncHandler(async (req, res) => {
         },
         "Book notes updated successfully"
     ));
-})
+}
 
-const getBookNotes = asyncHandler(async (req, res) => {
+const getBookNotes = async (req, res) => {
     const { bookId } = req.params;
     const userId = req.user._id;
 
@@ -233,7 +238,7 @@ const getBookNotes = asyncHandler(async (req, res) => {
         },
         "Book notes retrieved successfully"
     ));
-});
+}
 
 export{
     markAsRead,

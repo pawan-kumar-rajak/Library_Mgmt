@@ -1,10 +1,9 @@
-import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Category } from "../models/category.model.js";
 import { Book } from "../models/books.model.js";
 
-const createCategory = asyncHandler(async (req, res, next) => {
+const createCategory = async (req, res, next) => {
     try {
         const { name, description } = req.body;
 
@@ -27,9 +26,9 @@ const createCategory = asyncHandler(async (req, res, next) => {
         console.log("error in createCategory: ", error)
         return next(new ApiError(500, "Something went wrong while creating category",error));
     }
-})
+}
 
-const deleteCategory = asyncHandler(async (req, res, next) => {
+const deleteCategory = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -49,10 +48,10 @@ const deleteCategory = asyncHandler(async (req, res, next) => {
         return next(new ApiError(500, "Something went wrong while deleting category"));
     }
 }
-)
 
 
-const getCategoryNames = asyncHandler(async (req, res, next) => {
+
+const getCategoryNames = async (req, res, next) => {
     try {
         const categories = await Category.find({}, { name: 1, _id: 1 });
 
@@ -65,10 +64,10 @@ const getCategoryNames = asyncHandler(async (req, res, next) => {
         console.log("error in getCategoryNames: ", error)
         return next(new ApiError(500, "Something went wrong while retrieving categories"));
     }
-})
+}
 
 
-const getCategoryBooks = asyncHandler(async(req,res,next)=>{
+const getCategoryBooks = async(req,res,next)=>{
     try {
         const {categoryId} = req.params
         const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
@@ -115,6 +114,6 @@ const getCategoryBooks = asyncHandler(async(req,res,next)=>{
         console.log("error in getCategorybooks: ", error)
         return next(new ApiError(500, "Something went wrong while retrieving books"));
     }
-})
+}
 
 export { createCategory, deleteCategory, getCategoryNames, getCategoryBooks };

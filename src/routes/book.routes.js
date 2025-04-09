@@ -15,18 +15,19 @@ import{
 
 const router = Router();
 
-router.route("/").get(getAllBooks)
+router.route("/").get(verifyJWT,getAllBooks)
 
-router.route("/add").post(verifyJWT,upload.fields([
+router.route("/add").post(verifyJWT,isAdmin,upload.fields([
   { name: 'coverImage', maxCount: 1 },
   { name: 'digitalFile', maxCount: 1 }
-  ]),AddBooks);
+  ]),
+  AddBooks);
 
 router.route("/update/:id")
-.put(verifyJWT, upload.single("digitalFile"), updateBook)
+.put(verifyJWT,isAdmin, upload.single("digitalFile"), updateBook)
 
 router.route("/delete/:id")
-.delete(verifyJWT, deleteBook);
+.delete(verifyJWT,isAdmin, deleteBook);
 
 // router.route("/details/:BookId").get(verifyJWT, BookDetails)
 router.route("/details/:BookId").get(BookDetails)

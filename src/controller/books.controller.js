@@ -1,69 +1,34 @@
-import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { Category } from "../models/category.model.js";
 import { Book } from "../models/books.model.js";
 import path from "path";
-import fs from "fs";
 import { deleteFile } from "../middlewares/multer.middleware.js";
-import { User } from "../models/user.model.js";
-
-//helper function
-// Function to convert date string to year format
-function convertToPublicationYear(dateString) {
-  // Split the date string by the slash ('/') separator
-  const dateParts = dateString.split('/');
-
-  // Extract the year part (third part of the array)
-  const year = parseInt(dateParts[2], 10);
-
-  // Check if the year is a valid number and if it is less than or equal to the current year
-  if (isNaN(year) || year > new Date().getFullYear()) {
-    throw new Error(`${year} is not a valid publication year!`);
-  }
-
-  // Return the valid year
-  return year;
-}
-
-
-function parseString(input, delimiter = ',') {
-  console.log("input", input)
-  // Remove the square brackets and any spaces around the string
-  const cleanedInput = input.replace(/[\[\]\s]/g, '');
-
-  // Split the cleaned string by the delimiter and return an array of words
-  return cleanedInput.split(delimiter)
-      .map(item => item.trim())  // Trim spaces around each word
-      .filter(item => item.length > 0); // Filter out empty strings if any
-}
-
-
-const AddBooks = asyncHandler(async (req, res, next) => {
+import { getPDFPageCount } from "../middlewares/multer.middleware.js";
+import { Category } from "../models/category.model.js";
+import { logActivity } from "../utils/ActivityLog.js";
+const AddBooks = async (req, res, next) => {
   try {
     const { title, author, publisher, publicationYear, isbn, description, categories, availability, language } = req.body;
-
-    if ([title, author, publisher, publicationYear, isbn, description, categories, availability].some((field) => field?.trim() === "")) {
-      return next(new ApiError(400, "All fields are required"));
-    }
-
+    
     const existedBook = await Book.findOne({ isbn: isbn });
     if (existedBook) {
-      return next(new ApiError(409, "Book with this ISBN already exists"));
+      // return next(new ApiError(409, "Book with this ISBN already exists"));
     }
 
-    const publicationDate = convertToPublicationYear(publicationYear);
-    const categoriesArray = parseString(categories, ',');
+    const categoriesArray = await Category.find({ name: { $in: categories } }).select('_id'); // Query for categories by name
+    const categoryIds = categoriesArray.map(category => category._id); // Extract the _id from the returned categories
+
+    const totalPages = await getPDFPageCount(req.files.digitalFile[0].path);
 
     const digitalFile = req.files.digitalFile ? {
       localPath: `/uploads/books/${req.files.digitalFile[0].filename}`,
       universalPath:`${process.env.IP_ADDRESS}/uploads/books/${req.files.digitalFile[0].filename}`,
       mimeType: req.files.digitalFile[0].mimetype,
       size: req.files.digitalFile[0].size,
-      originalName: req.files.digitalFile[0].originalname
+      originalName: req.files.digitalFile[0].originalname,
+      totalPages: totalPages
     } : null;
 
-      console.log("digital Image: ", digitalFile, req.files)
 
     if (!digitalFile) {
       return next(new ApiError(400, "Digital file is required"));
@@ -79,10 +44,10 @@ const AddBooks = asyncHandler(async (req, res, next) => {
       title,
       author,
       publisher,
-      publicationYear: publicationDate,
+      publicationYear,
       isbn,
       description,
-      categories:categoriesArray,
+      categories:categoryIds,
       digitalFile,
       availability,
       language,
@@ -92,15 +57,18 @@ const AddBooks = asyncHandler(async (req, res, next) => {
     if (!book) {
       return next(new ApiError(409, "Book not created"));
     }
+
+    await logActivity(req, 'CREATE_BOOK', 'Book', book.id,book);
+
     res.status(201).json(new ApiResponse(201, book, 'Book created Successfully'));
   } catch (error) {
     console.log("error in AddBooks: ", error)
     return next(new ApiError(500, "Something went wrong while creating book"));
   }
-})
+}
 
 
-const updateBook = asyncHandler(async (req, res, next) => {
+const updateBook = async (req, res, next) => {
   try {
     const { id } = req.params;
     const {
@@ -166,6 +134,8 @@ const updateBook = asyncHandler(async (req, res, next) => {
       return next(new ApiError(404, "Book not found"));
     }
 
+    await logActivity(req, 'UPDATE_BOOK', 'Book', updatedBook.id, updatedBook);
+
     res.status(200).json(new ApiResponse(200, updatedBook, 'Book updated successfully'));
   } catch (error) {
 
@@ -177,10 +147,10 @@ const updateBook = asyncHandler(async (req, res, next) => {
     console.log("error in updateBook: ", error)
     return next(new ApiError(500, "Something went wrong while updating book"));
   }
-})
+}
 
 
-const deleteBook = asyncHandler(async (req, res, next) => {
+const deleteBook = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -200,16 +170,18 @@ const deleteBook = asyncHandler(async (req, res, next) => {
       
     }
 
+    await logActivity(req, 'DELETE_BOOK', 'Book', book.id, book);
+
     res.status(200).json(new ApiResponse(200, null, 'Book deleted successfully'));
   } catch (error) {
     console.log("error in deleteBook: ", error)
     return next(new ApiError(500, "Something went wrong while deleting book"));
   }
-})
+}
 
 
 
-const getAllBooks = asyncHandler(async (req, res, next) => {
+const getAllBooks = async (req, res, next) => {
   try {
     const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
     console.log("role", req.role)
@@ -234,7 +206,6 @@ const getAllBooks = asyncHandler(async (req, res, next) => {
     else if (role === 'Faculty') {
       availabilityFilter = { $in: ['public', 'students', 'faculty'] };
     }
-   availabilityFilter = { $in: ['public', 'students'] };
     const options = {
       page: parseInt(page),
       limit: parseInt(limit),
@@ -268,13 +239,13 @@ const getAllBooks = asyncHandler(async (req, res, next) => {
     console.error("Error in getAllBooks: ", error);
     return next(new ApiError(500, "Failed to retrieve books"));
   }
-});
+}
 
 
-const searchBooks = asyncHandler(async (req, res, next) => {
+const searchBooks = async (req, res, next) => {
   try {
     const { search, page = 1, limit = 10 } = req.query;
-    
+    console.log("search: ", search)
     if (!search) {
       return next(new ApiError(400, "Search query is required"));
     }
@@ -316,15 +287,16 @@ const searchBooks = asyncHandler(async (req, res, next) => {
       }
     };
 
+
     res.status(200).json(new ApiResponse(200, response, 'Search results retrieved successfully'));
   } catch (error) {
     console.error("Error in searchBooks: ", error);
     return next(new ApiError(500, "Failed to search books"));
   }
-});
+}
 
 
-const filterBooks = asyncHandler(async (req, res, next) => {
+const filterBooks = async (req, res, next) => {
   try {
     const { 
       page = 1, 
@@ -333,6 +305,7 @@ const filterBooks = asyncHandler(async (req, res, next) => {
       categories,
       publicationYear,
       resourceType,
+      language
       
     } = req.query;
 
@@ -362,6 +335,10 @@ const filterBooks = asyncHandler(async (req, res, next) => {
     
     if(resourceType) {
       query.resourceType = { $regex: resourceType, $options: 'i' };
+    }
+
+    if(language) {
+      query.language = { $regex: language, $options: 'i' };
     }
 
    
@@ -398,10 +375,10 @@ const filterBooks = asyncHandler(async (req, res, next) => {
     console.error("Error in filterBooks: ", error);
     return next(new ApiError(500, "Failed to filter books"));
   }
-});
+}
 
 
-const BookDetails = asyncHandler(async (req, res, next) => {
+const BookDetails = async (req, res, next) => {
   try {
     // const userId = req.user._id;
     const { BookId } = req.params;
@@ -425,7 +402,7 @@ const BookDetails = asyncHandler(async (req, res, next) => {
     console.error("Error in BookDetails: ", error);
     return next(new ApiError(500, "Failed to retrieve book details"));
   }
-});
+}
   
 export {
   AddBooks,

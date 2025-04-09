@@ -48,7 +48,8 @@ const bookSchema = new Schema(
             universalPath: String,
             mimeType: String,
             size: Number,
-            originalName: String
+            originalName: String,
+            totalPages: Number,
           },
       
         description: {
@@ -73,7 +74,7 @@ const bookSchema = new Schema(
 
         language: {
             type: String,
-            enum: ['English', 'Spanish', 'French', 'German', 'Chinese', 'Japanese'],
+            enum: ['English', 'Spanish', 'French', 'German', 'Chinese','Hindi', 'Japanese'],
             default: 'English'
         },
 
