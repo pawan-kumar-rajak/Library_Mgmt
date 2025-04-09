@@ -27,7 +27,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
 	}
 };
 
-const createAdmin = asyncHandler(async (req, res, next) => {
+const createAdmin = async (req, res, next) => {
 	try {
 		const { email, password, fullName } = req.body;
 	
@@ -84,9 +84,9 @@ const createAdmin = asyncHandler(async (req, res, next) => {
 		console.error('Error in admin.controller (createAdmin) :', error);
 		return next(new ApiError(500, 'Internal server error in createAdmin'));
 	}
-});
+}
 
-const loginAdmin = asyncHandler(async (req, res, next) => {
+const loginAdmin = async (req, res, next) => {
 	try {
 		const { email, password } = req.body;
 	
@@ -155,10 +155,10 @@ const loginAdmin = asyncHandler(async (req, res, next) => {
 		console.error('Error in admin.controller (Login admin) :', error);
 		return next(new ApiError(500, 'Internal server error in Login admin',error));
 	}
-});
+}
 
 
-const logoutAdmin = asyncHandler(async (req, res, next) => {
+const logoutAdmin = async (req, res, next) => {
 	await Admin.findByIdAndUpdate(
 		req.user_id,
 		{
@@ -181,10 +181,10 @@ const logoutAdmin = asyncHandler(async (req, res, next) => {
 		.clearCookie("accessToken", options)
 		.clearCookie("refreshToken", options)
 		.json(new ApiResponse(200, {}, "Admin logged Out"));
-});
+}
 
 
-const refreshAccessToken = asyncHandler(
+const refreshAccessToken = 
 	async (req, res, next) => {
 		const incomingRefreshToken =
 			req.cookies.refreshToken || req.body.refreshToken || req.header("Authorization")?.replace("Bearer ", "");;
@@ -245,7 +245,7 @@ const refreshAccessToken = asyncHandler(
 			);
 		}
 	}
-);
+
 
 
 
